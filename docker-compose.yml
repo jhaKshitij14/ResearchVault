@@ -1,0 +1,20 @@
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: researchvault
+      POSTGRES_USER: researchvault
+      POSTGRES_PASSWORD: researchvault
+    ports:
+      - "5432:5432"
+    volumes:
+      - researchvault_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U researchvault -d researchvault"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  researchvault_pgdata:
