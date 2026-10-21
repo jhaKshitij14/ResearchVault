@@ -8,6 +8,7 @@ dependencies = [
     "pgvector>=0.5.1",
     "psycopg[binary]>=3.3.6",
     "pydantic-settings>=2.16.0",
+    "pymupdf>=2.0",
     "sqlalchemy>=2.1.5",
     "uvicorn[standard]>=0.54.0",
 ]
