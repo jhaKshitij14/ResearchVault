@@ -75,3 +75,4 @@ def test_chunk_indices_are_sequential():
     assert [chunk["chunk_index"] for chunk in chunks] == list(
         range(len(chunks))
     )
+
