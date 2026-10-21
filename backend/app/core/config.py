@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     llm_base_url: str = (
         "https://generativelanguage.googleapis.com/v1beta/openai"
     )
-    llm_model: str = "gemini-2.5-flash"
+    llm_model: str = "gemini-3.5-flash-lite"
     llm_timeout: float = 60.0
 
     upload_dir: Path = Path("storage/uploads")
