@@ -4,6 +4,14 @@ import re
 from typing import Any
 
 
+class InvalidLLMResponseError(ValueError):
+    """Raised when the model's output is malformed or violates the contract.
+
+    Subclasses ValueError so existing callers keep working, but the API layer
+    maps it to a provider-side failure (502) instead of a client error (422).
+    """
+
+
 ABSTENTION_MESSAGE = (
     "I could not find sufficient evidence in the retrieved passages "
     "to answer this question."
@@ -75,7 +83,7 @@ Evidence passages:
 def _parse_llm_json(raw_response: str) -> dict[str, Any]:
     """Parse a JSON object, tolerating surrounding prose or Markdown fences."""
     if not isinstance(raw_response, str) or not raw_response.strip():
-        raise ValueError("LLM returned an empty response")
+        raise InvalidLLMResponseError("LLM returned an empty response")
 
     text = raw_response.strip()
 
@@ -112,7 +120,7 @@ def _parse_llm_json(raw_response: str) -> dict[str, Any]:
                     break
 
     if not isinstance(result, dict):
-        raise ValueError("LLM returned invalid JSON")
+        raise InvalidLLMResponseError("LLM returned invalid JSON")
 
     return result
 
@@ -145,13 +153,13 @@ async def generate_grounded_answer(
     citations = result.get("citations")
 
     if not isinstance(answer, str) or not answer.strip():
-        raise ValueError("LLM answer must be a non-empty string")
+        raise InvalidLLMResponseError("LLM answer must be a non-empty string")
     if not isinstance(abstained, bool):
-        raise ValueError("LLM abstained field must be a boolean")
+        raise InvalidLLMResponseError("LLM abstained field must be a boolean")
     if not isinstance(citations, list) or any(
         not isinstance(citation, str) for citation in citations
     ):
-        raise ValueError("LLM citations must be a list of strings")
+        raise InvalidLLMResponseError("LLM citations must be a list of strings")
 
     if abstained:
         return {
@@ -168,14 +176,14 @@ async def generate_grounded_answer(
         len(citations) != len(set(citations))
         or any(citation not in valid_ids for citation in citations)
     ):
-        raise ValueError("LLM returned unknown or duplicate citations")
+        raise InvalidLLMResponseError("LLM returned unknown or duplicate citations")
 
     if not citations:
-        raise ValueError("A non-abstaining answer must cite at least one source")
+        raise InvalidLLMResponseError("A non-abstaining answer must cite at least one source")
 
     inline_ids = set(re.findall(r"\[(S\d+)\]", answer))
     if not set(citations).issubset(inline_ids):
-        raise ValueError("A non-abstaining answer must cite its sources inline")
+        raise InvalidLLMResponseError("A non-abstaining answer must cite its sources inline")
 
     source_by_id = {source["citation_id"]: source for source in sources}
 

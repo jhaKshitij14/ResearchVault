@@ -12,8 +12,11 @@ from app.core.config import settings
 from app.db.session import engine
 from app.models.document import Document
 from app.models.user import User
-from app.services.answer_service import generate_grounded_answer
-from app.services.embedding_client import JinaEmbeddingClient
+from app.services.answer_service import (
+    InvalidLLMResponseError,
+    generate_grounded_answer,
+)
+from app.services.embedding_client import EmbeddingError, JinaEmbeddingClient
 from app.services.ingestion_service import ingest_document
 from app.services.llm_client import OpenAICompatibleClient, LLMProviderError
 from app.services.query_service import search_question
@@ -156,8 +159,14 @@ async def ask_document(
             **answer,
             "retrieved_passage_count": len(search_result["results"]),
         }
+    except InvalidLLMResponseError as exc:
+        raise HTTPException(
+            502, "Gemini returned a malformed or invalid answer"
+        ) from exc
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
+    except EmbeddingError as exc:
+        raise HTTPException(502, "Query embedding failed") from exc
     except LLMProviderError as exc:
         raise HTTPException(502, "Gemini answer generation failed") from exc
     finally:
